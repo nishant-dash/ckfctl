@@ -2,7 +2,7 @@ from kf_upgrade_planner import kup
 from kf_image_scanner import kvs
 import typer
 from typing_extensions import Annotated
-from typing import Optional, List
+from typing import List
 
 cli = typer.Typer(
     name="ckfctl",
@@ -208,5 +208,8 @@ def plugins():
     """
     pass
 
-if __name__ == "__main__":
+def entrypoint() -> None:
     cli()
+
+if __name__ == "__main__":
+    entrypoint()

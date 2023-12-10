@@ -53,6 +53,11 @@ class kup:
                 f.write(output)
 
 
+    def color_me(self, string: str, color: str="green") -> str:
+        if not self.output_file:
+            return f"[{color}]{string}[/{color}]" 
+        return string
+
     # Styled print with optional upgrade markers
     # Supports yaml, json and table 
     def pprint(self, d, upgrades=False):
@@ -65,10 +70,15 @@ class kup:
             if upgrades:
                 fields = ["Charm", "Src Channel", "S", "Dst Channel", "Src Rev", "S", "Dst Rev"]
                 for k,v in d.items():
-                    temp.append([k] + [str(v2) for v2 in v.values()])
-                    if not self.output_file:
-                        if '->' in temp[-1]:
-                            temp[-1] = [f"[green]{i}[/green]" if i else i for i in temp[-1]]
+                    if v["channel_upgrade"] == "->":
+                        temp.append([self.color_me(k)] + [self.color_me(str(v2)) for v2 in v.values()])
+                    elif v["revision_upgrade"] == "->":
+                        temp.append([self.color_me(k)])
+                        for k2, v2 in v.items():
+                            if "revision" in k2:
+                                temp[-1].extend([self.color_me(str(v2))])
+                            else:
+                                temp[-1].extend([str(v2)])
             else:
                 fields = ["Charm", "Channel", "Revision"]
                 for k,v in d.items():
@@ -94,7 +104,7 @@ class kup:
         else:
             for charm, info in bundle["applications"].items():
                 charm_version_dict[charm] = {"channel": info["channel"], "charm_name": info["charm"]}
-            self.get_reversion_numbers(charm_version_dict)
+            self.get_revision_numbers(charm_version_dict)
 
         return charm_version_dict , charm_version_dict[self.anchor_app]["channel"]
 
@@ -141,8 +151,8 @@ class kup:
 
         for charm, view in final_view.items():
             final_dict[charm] = {
-                "src_channel": None, "channel_upgrade" : None,"dst_channel": None,
-                "src_revision": None, "revision_upgrade" : None, "dst_revision": None,
+                "src_channel": None, "channel_upgrade" : "=","dst_channel": None,
+                "src_revision": None, "revision_upgrade" : "=", "dst_revision": None,
             }
             if view["src"]: 
                 final_dict[charm]["src_channel"] = view["src"]["channel"]
@@ -179,27 +189,29 @@ class kup:
 
 
     # function to query charmhub with juju to get version numbers for apps
-    def get_reversion_numbers(self, bundle):
+    def get_revision_numbers(self, bundle):
         # before we can return target bundle, we need to get revision numbers from
         # charmhub. Currently, the kf bundle in the git repo does not include such
         # information.
         print("Getting revision numbers from charmhub via local juju client...")
         # for each charm, check with juju info to see what revision you get
         for charm, info in track(bundle.items(), description="Processing..."):
-            # get the juju info as yaml
+            # get the juju info as json
             cmd = [self.juju, "info", info["charm_name"], "--format", "json"]
             output = sp.run(cmd, stdout=sp.PIPE, stderr=sp.DEVNULL)
-            # parse yaml for what we need
+            # parse json for what we need
             juju_info = ""
             try:
                 juju_info = json.loads(output.stdout)
             except json.JSONDecodeError as error:
                 print(error)
-            channels = juju_info["channel-map"]
-            if info["channel"] not in channels:
+            channels = juju_info["channels"]
+            cur_channel = info["channel"].split('/')[0]
+            cur_track = info["channel"].split('/')[1]
+            if cur_channel not in channels:
                 bundle[charm]["revision"] = "Error"
             else:    
-                bundle[charm]["revision"] = channels[info["channel"]]["revision"]
+                bundle[charm]["revision"] = channels[cur_channel][cur_track][0]["revision"]
 
     # load target kubeflow bundle from github for comparison
     def download_bundle(self):

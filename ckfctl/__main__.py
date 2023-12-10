@@ -1,5 +1,5 @@
 """Main entry point."""
-from ckfctl.cli import __main__ as entrypoint
+from ckfctl.cli import entrypoint
 
 
 def main() -> None:

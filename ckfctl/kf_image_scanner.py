@@ -4,11 +4,8 @@ kf pod image scanner
 
 import subprocess as sp
 import os
-from uuid import uuid4 as uid
 import json
 import yaml
-from termcolor import colored
-import pty
 
 
 class kvs:

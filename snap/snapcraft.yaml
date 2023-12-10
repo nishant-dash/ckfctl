@@ -10,28 +10,29 @@ grade: devel
 confinement: strict
 
 apps:
-  clc:
+  ckfctl:
     command: bin/ckfctl.wrapper
-#    completer: etc/bash_completion.d/snap.clc
+#    completer: etc/bash_completion.d/snap.ckfctl
     plugs:
       - juju-client-observe
       - network
       - network-bind
       - ssh-public-keys
       # Access to config
-+     - home
+      - home
       - dot-local-share-juju
+      - juju-bin
     environment:
       PATH: $PATH:$SNAP/juju/bin
 
 parts:
-  clc-wrapper:
+  ckfctl-wrapper:
     plugin: dump
     source: bin
     organize:
-      clc.wrapper: bin/clc.wrapper
+      ckfctl.wrapper: bin/ckfctl.wrapper
 
-  clc:
+  ckfctl:
     plugin: python
     build-packages:
       - python3-wheel
