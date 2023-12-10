@@ -15,6 +15,7 @@ import os
 from rich.console import Console
 from rich.table import Table
 from rich.progress import track
+from rich import box
 
 
 class kup:
@@ -29,10 +30,10 @@ class kup:
             setattr(self, k, v)
 
 
-    def _print(self, output, columns):
+    def _print(self, output, columns=None):
         if not self.output_file:
             if self.format == "table":
-                table = Table()
+                table = Table(box=box.ROUNDED)
                 for c in columns:
                     table.add_column(c)
                 for r in output:
@@ -224,7 +225,10 @@ class kup:
             return
         target_bundle = None
         version, channel = self.target_version.split("/")
-        url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/kubeflow/bundle.yaml"
+        if version == "latest":
+            url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/bundle.yaml"
+        else:
+            url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/kubeflow/bundle.yaml"
         response = requests.get(url)
         print (f"Downloading kf {self.target_version} bundle...")
         if response.status_code != 200:

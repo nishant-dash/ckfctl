@@ -1,5 +1,6 @@
-from ckfctl.kf_upgrade_planner import kup
-from ckfctl.kf_image_scanner import kvs
+from kf_upgrade_planner import kup
+from kf_image_scanner import kvs
+from juju_helper import juju_export_bundle
 import typer
 from typing_extensions import Annotated
 from typing import List
@@ -15,19 +16,19 @@ cli = typer.Typer(
 
 epilog_check = '''
 To view your juju installation's bundle, run,\n
-kft check -s\n
+$ ckfctl check -l\n
 To view a local bundle file, run\n
-kft check -f filename\n
+$ ckfctl check -f filename\n
 You can extract a bundle from juju as well, with\n
-juju export-bundle -o filename\n
+$ juju export-bundle -o filename\n
 \n
 To view a bundle from the kubeflow git repo, run with only the "-t" flag\n
-and then a channel after it. eg: kft check -t 1.7/stable\n
+and then a channel after it. eg: ckfctl check -t 1.7/stable\n
 \n
 When more than one(maximum of 2) are provided, an automatic check\n
 for upgrade is run.\n
-kft check --self -t 1.8/stable\n
-kft check -f localbundle -t 1.7/edge
+$ ckfctl check -l -t 1.8/stable\n
+$ ckfctl check -f localbundle.yaml -t 1.7/edge
 '''
 @cli.command(epilog=epilog_check)
 def check(
@@ -59,6 +60,32 @@ def check(
             help="Target version of kubeflow bundle, ex: 1.8/stable, 1.7/beta or self",
         ),
     ] = None,
+    src: Annotated[
+        str,
+        typer.Option(
+            "-s",
+            "--src",
+            help='''
+            Version of kubeflow bundle, filename or special keyword, ex: 1.8/stable, local-bundle.yaml or local
+            ''',
+            rich_help_panel="Comparison tools",
+            show_default=False,
+        ),
+    ] = None,
+    dst: Annotated[
+        str,
+        typer.Option(
+            "-d",
+            "--dst",
+            help='''
+            Version of kubeflow bundle, filename or special keyword, ex: 1.8/stable, local-bundle.yaml, local or self\n
+            special keyword "self" is used to infer and use the version of the source bundle\n
+            special keyword "local" is used to get the bundle from the current juju client
+            ''',
+            rich_help_panel="Comparison tools",
+            show_default=False,
+        ),
+    ] = None,
     formatting: Annotated[
         str,
         typer.Option(
@@ -82,12 +109,14 @@ def check(
     :sparkles: [bold]View[/bold] kubeflow bundles or compare 2 bundles for possible upgrades
     """
     obj = {
+        "local": local,
         "target_version": target,
         "file": None,
         "second_file": None,
         "format": formatting,
         "output_file": output,
     }
+
     if file:
         if len(file) == 2 and obj["target_version"]:
             print("When checking for upgrade choose one of:")
@@ -105,6 +134,11 @@ def check(
 
 
     kupObj = kup(**obj)
+
+    if kupObj.local:
+        local_bundle = juju_export_bundle()
+        charm_version_dict, local_version = kupObj.transform(local_bundle)
+        raise typer.Exit(code=0)
 
     local_version = None
     if kupObj.file:

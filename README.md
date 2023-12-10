@@ -29,6 +29,27 @@ ckfctl --help
 sudo snap install ckfctl
 ```
 
+However, after the snap install, you need to make some connectiong to give ckfctl access
+to certain resources
+```bash
+# to talk to juju 3 client
+sudo snap connect ckfctl:juju-bin juju
+# to use juju ssh keys
+sudo snap connect ckfctl:ssh-public-keys
+# to read juju client confis
+sudo snap connect ckfctl:dot-local-share-juju
+# to write and modify juju client configs
+sudo snap connect ckfctl:juju-client-observe
+```
+
+## Building
+
+### Build snap
+
+```bash
+make build
+```
+
 ## Usage
 
 You can view all subcommands and flags with `-h` or `--help`.
