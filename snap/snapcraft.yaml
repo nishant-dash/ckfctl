@@ -1,32 +1,65 @@
-name: kft
-base: core20
-adopt-info: kft
-summary: A collection of handy wrapper tools for operators of kubeflow environments
+name: ckfctl
+base: core22
+adopt-info: ckfctl
+summary: A collection of handy tools for operators of kubeflow environments
+license: MIT
 description: |
-  With kf-tools you have access to a few command line tools to help you operate 
-  your kubeflow deployment such as viewing pod logs, checking versions and
-  deltas of revision, and scanning for CVEs against pod images.
+  A collection of handy wrapper tools for operators of kubeflow environments
 
-grade: devel # must be 'stable' to release into candidate/stable channels
-confinement: devmode
-
-parts:
-  kft:
-    plugin: python
-    source: .
-    override-build: |
-        snapcraftctl build
-        echo "Version: $(python3 setup.py --version)"
-        snapcraftctl set-version "$(python3 setup.py --version)"
-      #  ./install.sh
-    stage-snaps:
-      - juju/2.9/stable
-    stage-packages:
-      - fzf
+grade: devel
+confinement: strict
 
 apps:
-  kft:
-    command: bin/kft
+  clc:
+    command: bin/ckfctl.wrapper
+#    completer: etc/bash_completion.d/snap.clc
     plugs:
+      - juju-client-observe
+      - network
       - network-bind
-      - home
+      - ssh-public-keys
+      # Access to config
++     - home
+      - dot-local-share-juju
+    environment:
+      PATH: $PATH:$SNAP/juju/bin
+
+parts:
+  clc-wrapper:
+    plugin: dump
+    source: bin
+    organize:
+      clc.wrapper: bin/clc.wrapper
+
+  clc:
+    plugin: python
+    build-packages:
+      - python3-wheel
+      - python3-pip
+      - python3-setuptools-scm
+    source: .
+    stage-packages:
+      - git
+    override-build: |
+      craftctl default
+      set -e
+
+      # set up bash completion
+      # mkdir -p ${CRAFT_PART_INSTALL}/etc/bash_completion.d/
+      # echo 'export PATH="${PATH}:/snap/bin:/var/lib/snapd/snap/bin"' > ${CRAFT_PART_INSTALL}/etc/bash_completion.d/snap.ckfctl
+      # cat ../src/completions/bash/ckfctl_bash_completion >> ${CRAFT_PART_INSTALL}/etc/bash_completion.d/snap.ckfctl
+
+      # set version
+      VERSION=$(python3 setup.py --version)
+      echo "Version: ${VERSION}"
+      craftctl set version=${VERSION}
+
+plugs:
+  dot-local-share-juju:
+    interface: personal-files
+    write:
+      - $HOME/.local/share/juju
+  juju-bin:
+    interface: content
+    content: juju
+    target: $SNAP/juju
