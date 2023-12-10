@@ -1,6 +1,6 @@
-from kf_upgrade_planner import kup
-from kf_image_scanner import kvs
-from juju_helper import juju_export_bundle
+from ckfctl.kf_upgrade_planner import kup
+from ckfctl.kf_image_scanner import kvs
+from ckfctl.juju_helper import juju_export_bundle
 import typer
 from typing_extensions import Annotated
 from typing import List
@@ -138,6 +138,7 @@ def check(
     if kupObj.local:
         local_bundle = juju_export_bundle()
         charm_version_dict, local_version = kupObj.transform(local_bundle)
+        kupObj.pprint(charm_version_dict)
         raise typer.Exit(code=0)
 
     local_version = None
