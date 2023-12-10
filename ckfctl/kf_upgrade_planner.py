@@ -79,6 +79,8 @@ class kup:
                                 temp[-1].extend([self.color_me(str(v2))])
                             else:
                                 temp[-1].extend([str(v2)])
+                    else:
+                        temp.append([k] + [str(v2) for v2 in v.values()])
             else:
                 fields = ["Charm", "Channel", "Revision"]
                 for k,v in d.items():
@@ -87,7 +89,6 @@ class kup:
                         if k2 != "charm_name":
                             temp2.extend([str(v2)])
                     temp.append(temp2)
-            # self._print(tab(temp, headers=fields))
             self._print(temp, columns=fields)
 
 

@@ -34,8 +34,8 @@ def check(
     local: Annotated[
         bool,
         typer.Option(
-            "-s",
-            "--self",
+            "-l",
+            "--local",
             help="Check juju installation for Kubeflow",
         ),
     ] = False,
@@ -113,7 +113,7 @@ def check(
         charm_version_dict, local_version = kupObj.transform(local_bundle)
         if not kupObj.target_version:
             kupObj.pprint(charm_version_dict)
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=0)
 
     if kupObj.target_version == "self":
         kupObj.target_version = local_version
@@ -121,7 +121,7 @@ def check(
 
     if kupObj.target_version == -1:
         # get second local bundle file
-        target_bundle = kupObj.load_bundle(kupObj.file)
+        target_bundle = kupObj.load_bundle(kupObj.second_file)
         charm_version_dict_target, kupObj.target_version = kupObj.transform(target_bundle)
     else:
         # get target bundle
@@ -131,11 +131,10 @@ def check(
         charm_version_dict_target, kupObj.target_version = kupObj.transform(target_bundle, get_revision=True)
     if not kupObj.file:
         kupObj.pprint(charm_version_dict_target)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=0)
 
     # print upgrade opportunities
     kupObj.upgrade_flagger(source=charm_version_dict, target=charm_version_dict_target)
-
 
 @cli.command(
     epilog="Either attemp a local scan, provide an image or a file of image names"
