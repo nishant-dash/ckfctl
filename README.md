@@ -1,5 +1,5 @@
 
-# kf-tools
+# ckfctl (Charmed-KubeFlow-ConTroL)
 ### A collection of handy wrapper tools for operators of kubeflow environments
 
 
@@ -21,45 +21,20 @@ This scanner uses [trivy](https://github.com/aquasecurity/trivy) to help you sca
 ### Install from source
 
 ```bash
-git clone git@github.com:nishant-dash/kf-tools.git
-cd kf-tools/ && python3 setup.py install
-./install.sh
-```
-
-### Install from pip
-**Note, since these are wrapper scripts they use commands like juju, kubectl, fzf and trivy
-all of these are in install.sh (except juju and kubectl)**
-
-```bash
-pip install kft
+git clone git@github.com:nishant-dash/cos-lma-comparator.git
+cd ckfctl/ && pip install --no-build -e .
+ckfctl --help
 ```
 
 ### Install from snap (WIP)
 
 ```bash
-sudo snap install kft
+sudo snap install ckfctl
 ```
 
 ## Usage
 
 You can view all subcommands and flags with `-h` or `--help`.
-
-### kft logs (Kube Pod Logs viewer)
-
-```bash
-# use it as is
-kft logs
-
-# use it with less (default) or view
-kft logs less
-kft logs view
-
-# give it some extra flags
-kft logs "less +G"
-
-# grep the logs for anything you need
-kft logs "grep -iE 'error|block|fail|lost|timeout'"
-```
 
 
 ### kft check (Kube Upgrade Planner)

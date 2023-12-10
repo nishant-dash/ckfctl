@@ -1,6 +1,6 @@
 '''
 Tool to parse current deployment bundle, extrapolate possible kubeflow version and 
-print rudimentary upgrade path/steps
+print rudimentary upgrade info
 '''
 
 import yaml
