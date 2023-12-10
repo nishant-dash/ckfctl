@@ -1,5 +1,5 @@
-from kf_upgrade_planner import kup
-from kf_image_scanner import kvs
+from ckfctl.kf_upgrade_planner import kup
+from ckfctl.kf_image_scanner import kvs
 import typer
 from typing_extensions import Annotated
 from typing import List

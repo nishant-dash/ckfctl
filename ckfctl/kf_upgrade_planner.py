@@ -97,10 +97,13 @@ class kup:
         charm_version_dict = {}
         if not get_revision:
             for charm, info in bundle["applications"].items():
-                rev = "Not Found"
+                rev = "0"
                 if "revision" in info:
                     rev = info["revision"]
-                charm_version_dict[charm] = {"channel": info["channel"], "revision": rev}
+                if "local" in info["charm"]:
+                    charm_version_dict[charm] = {"channel": "local", "revision": rev}
+                else:
+                    charm_version_dict[charm] = {"channel": info["channel"], "revision": rev}
         else:
             for charm, info in bundle["applications"].items():
                 charm_version_dict[charm] = {"channel": info["channel"], "charm_name": info["charm"]}
