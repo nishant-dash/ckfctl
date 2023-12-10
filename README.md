@@ -6,10 +6,10 @@
 With kf-tools you have access to a few command line tools to help you operate your kubeflow deployment. These include:
 
 
-1) ckfctl check (Kube Upgrade Planner)
+1) `ckfctl check` (Kube Upgrade Planner)
 A tool to help you view your juju based kubeflow bundle, in terms of the charm, channel and revision. You can compare 2 local bundles or compare a local with a remote charmed kubeflow bundle and view the differences between these bundles based off their versioning information.
 
-3) ckfctl scan (Kube Vulnerability Scanner)
+3) `ckfctl scan` (Kube Vulnerability Scanner)
 This scanner uses [trivy](https://github.com/aquasecurity/trivy) to help you scan your pod images against a databases of known vulnerabilities. It does not scan the container image itself, but for references of CVEs against the image.
 
 
