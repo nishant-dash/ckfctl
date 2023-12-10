@@ -1,0 +1,310 @@
+---
+name: kubeflow
+applications:
+  metacontroller-operator:
+    channel: 3.0/stable
+    charm: metacontroller-operator
+    expose: false
+    trust: true
+    scale: 1
+  istio-ingressgateway:
+    channel: 1.17/stable
+    charm: istio-gateway
+    expose: false
+    options:
+      kind: ingress
+    trust: true
+    scale: 1
+  kfp-db:
+    channel: 8.0/stable
+    charm: mysql-k8s
+    constraints: mem=2G
+    expose: false
+    trust: true
+    scale: 1
+  kfp-metadata-writer:
+    channel: 2.0/stable
+    charm: kfp-metadata-writer
+    expose: false
+    trust: true
+    scale: 1
+  katib-db:
+    channel: 8.0/stable
+    charm: mysql-k8s
+    constraints: mem=2G
+    expose: false
+    trust: true
+    scale: 1
+  argo-controller:
+    channel: 3.3.10/stable
+    charm: argo-controller
+    expose: false
+    trust: true
+    scale: 1
+  knative-serving:
+    channel: 1.10/stable
+    charm: knative-serving
+    expose: false
+    options:
+      istio.gateway.name: kubeflow-gateway
+      namespace: knative-serving
+      istio.gateway.namespace: kubeflow
+    trust: true
+    scale: 1
+  kubeflow-profiles:
+    channel: 1.8/stable
+    charm: kubeflow-profiles
+    expose: false
+    trust: true
+    scale: 1
+  knative-operator:
+    channel: 1.10/stable
+    charm: knative-operator
+    expose: false
+    trust: true
+    scale: 1
+  pvcviewer-operator:
+    channel: 1.8/stable
+    charm: pvcviewer-operator
+    expose: false
+    trust: true
+    scale: 1
+    series: focal
+  tensorboard-controller:
+    channel: 1.8/stable
+    charm: tensorboard-controller
+    expose: false
+    trust: true
+    scale: 1
+  katib-ui:
+    channel: 0.16/stable
+    charm: katib-ui
+    expose: false
+    trust: true
+    scale: 1
+  kfp-ui:
+    channel: 2.0/stable
+    charm: kfp-ui
+    expose: false
+    trust: true
+    scale: 1
+  tensorboards-web-app:
+    channel: 1.8/stable
+    charm: tensorboards-web-app
+    expose: false
+    trust: true
+    scale: 1
+  kfp-schedwf:
+    channel: 2.0/stable
+    charm: kfp-schedwf
+    expose: false
+    trust: true
+    scale: 1
+  mlmd:
+    channel: 1.14/stable
+    charm: mlmd
+    expose: false
+    trust: false
+    scale: 1
+  minio:
+    channel: ckf-1.8/stable
+    charm: minio
+    expose: false
+    trust: false
+    scale: 1
+  training-operator:
+    channel: 1.7/stable
+    charm: training-operator
+    expose: false
+    trust: true
+    scale: 1
+  kfp-viz:
+    channel: 2.0/stable
+    charm: kfp-viz
+    expose: false
+    trust: true
+    scale: 1
+  oidc-gatekeeper:
+    channel: ckf-1.8/stable
+    charm: oidc-gatekeeper
+    expose: false
+    trust: true
+    scale: 1
+  istio-pilot:
+    channel: 1.17/stable
+    charm: istio-pilot
+    expose: false
+    options:
+      default-gateway: kubeflow-gateway
+    trust: true
+    scale: 1
+  kfp-profile-controller:
+    channel: 2.0/stable
+    charm: kfp-profile-controller
+    expose: false
+    trust: true
+    scale: 1
+  dex-auth:
+    channel: 2.36/stable
+    charm: dex-auth
+    expose: false
+    trust: true
+    scale: 1
+  jupyter-ui:
+    channel: 1.8/stable
+    charm: jupyter-ui
+    expose: false
+    trust: true
+    scale: 1
+  katib-db-manager:
+    channel: 0.16/stable
+    charm: katib-db-manager
+    expose: false
+    trust: true
+    scale: 1
+  kfp-persistence:
+    channel: 2.0/stable
+    charm: kfp-persistence
+    expose: false
+    trust: true
+    scale: 1
+  admission-webhook:
+    channel: 1.8/stable
+    charm: admission-webhook
+    expose: false
+    trust: true
+    scale: 1
+  katib-controller:
+    channel: 0.16/stable
+    charm: katib-controller
+    expose: false
+    trust: false
+    scale: 1
+  knative-eventing:
+    channel: 1.10/stable
+    charm: knative-eventing
+    expose: false
+    options:
+      namespace: knative-eventing
+    trust: true
+    scale: 1
+  kubeflow-dashboard:
+    channel: 1.8/stable
+    charm: kubeflow-dashboard
+    expose: false
+    trust: true
+    scale: 1
+  kserve-controller:
+    channel: 0.11/stable
+    charm: kserve-controller
+    expose: false
+    trust: true
+    scale: 1
+  kubeflow-roles:
+    channel: 1.8/stable
+    charm: kubeflow-roles
+    expose: false
+    trust: true
+    scale: 1
+  kfp-viewer:
+    channel: 2.0/stable
+    charm: kfp-viewer
+    expose: false
+    trust: true
+    scale: 1
+  kubeflow-volumes:
+    channel: 1.8/stable
+    charm: kubeflow-volumes
+    expose: false
+    trust: false
+    scale: 1
+  envoy:
+    channel: 2.0/stable
+    charm: envoy
+    expose: false
+    trust: true
+    scale: 1
+  kfp-api:
+    channel: 2.0/stable
+    charm: kfp-api
+    expose: false
+    trust: true
+    scale: 1
+  seldon-controller-manager:
+    channel: 1.17/stable
+    charm: seldon-core
+    expose: false
+    trust: true
+    scale: 1
+  jupyter-controller:
+    channel: 1.8/stable
+    charm: jupyter-controller
+    expose: false
+    trust: true
+    scale: 1
+bundle: kubernetes
+relations:
+  - - argo-controller
+    - minio
+  - - "dex-auth:oidc-client"
+    - "oidc-gatekeeper:oidc-client"
+  - - "istio-pilot:ingress"
+    - "dex-auth:ingress"
+  - - "istio-pilot:ingress"
+    - "envoy:ingress"
+  - - "istio-pilot:ingress"
+    - "jupyter-ui:ingress"
+  - - "istio-pilot:ingress"
+    - "katib-ui:ingress"
+  - - "istio-pilot:ingress"
+    - "kfp-ui:ingress"
+  - - "istio-pilot:ingress"
+    - "kubeflow-dashboard:ingress"
+  - - "istio-pilot:ingress"
+    - "kubeflow-volumes:ingress"
+  - - "istio-pilot:ingress"
+    - "oidc-gatekeeper:ingress"
+  - - "istio-pilot:ingress-auth"
+    - "oidc-gatekeeper:ingress-auth"
+  - - "istio-pilot:istio-pilot"
+    - "istio-ingressgateway:istio-pilot"
+  - - "istio-pilot:ingress"
+    - "tensorboards-web-app:ingress"
+  - - "istio-pilot:gateway-info"
+    - "tensorboard-controller:gateway-info"
+  - - "katib-db-manager:relational-db"
+    - "katib-db:database"
+  - - "kfp-api:relational-db"
+    - "kfp-db:database"
+  - - "kfp-api:kfp-api"
+    - "kfp-persistence:kfp-api"
+  - - "kfp-api:kfp-api"
+    - "kfp-ui:kfp-api"
+  - - "kfp-api:kfp-viz"
+    - "kfp-viz:kfp-viz"
+  - - "kfp-api:object-storage"
+    - "minio:object-storage"
+  - - "kfp-profile-controller:object-storage"
+    - "minio:object-storage"
+  - - "kfp-ui:object-storage"
+    - "minio:object-storage"
+  - - "kserve-controller:ingress-gateway"
+    - "istio-pilot:gateway-info"
+  - - "kserve-controller:local-gateway"
+    - "knative-serving:local-gateway"
+  - - kubeflow-profiles
+    - kubeflow-dashboard
+  - - "kubeflow-dashboard:links"
+    - "jupyter-ui:dashboard-links"
+  - - "kubeflow-dashboard:links"
+    - "katib-ui:dashboard-links"
+  - - "kubeflow-dashboard:links"
+    - "kfp-ui:dashboard-links"
+  - - "kubeflow-dashboard:links"
+    - "kubeflow-volumes:dashboard-links"
+  - - "kubeflow-dashboard:links"
+    - "tensorboards-web-app:dashboard-links"
+  - - "mlmd:grpc"
+    - "envoy:grpc"
+  - - "mlmd:grpc"
+    - "kfp-metadata-writer:grpc"

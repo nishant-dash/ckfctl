@@ -1,0 +1,32 @@
+name: kft
+base: core20
+adopt-info: kft
+summary: A collection of handy wrapper tools for operators of kubeflow environments
+description: |
+  With kf-tools you have access to a few command line tools to help you operate 
+  your kubeflow deployment such as viewing pod logs, checking versions and
+  deltas of revision, and scanning for CVEs against pod images.
+
+grade: devel # must be 'stable' to release into candidate/stable channels
+confinement: devmode
+
+parts:
+  kft:
+    plugin: python
+    source: .
+    override-build: |
+        snapcraftctl build
+        echo "Version: $(python3 setup.py --version)"
+        snapcraftctl set-version "$(python3 setup.py --version)"
+      #  ./install.sh
+    stage-snaps:
+      - juju/2.9/stable
+    stage-packages:
+      - fzf
+
+apps:
+  kft:
+    command: bin/kft
+    plugs:
+      - network-bind
+      - home
