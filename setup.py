@@ -13,7 +13,7 @@ setup(
     description = 'A collection of handy wrapper tools for operators of kubeflow environments',
     long_description = readf("README.md"),
     long_description_content_type = "text/markdown",
-    url = 'https://github.com/nishant-dash/kf-tools',
+    url = 'https://github.com/nishant-dash/ckfctl',
     packages = find_packages(),
     install_requires = [
         "pyyaml",

@@ -6,10 +6,7 @@
 With kf-tools you have access to a few command line tools to help you operate your kubeflow deployment. These include:
 
 
-1) kft logs (Kube Pod Logs viewer)
-A [fuzzy finder](https://github.com/junegunn/fzf) based utility for navigating pods, and then viewing them with CLI tools such as less, view, or any viewing tool. You can just apply any command after kpl such as grep, etc...
-
-2) kft check (Kube Upgrade Planner)
+1) kft check (Kube Upgrade Planner)
 A tool to help you view your juju based kubeflow bundle, in terms of the charm, channel and revision. You can compare 2 local bundles or compare a local with a remote charmed kubeflow bundle and view the differences between these bundles based off their versioning information.
 
 3) kft scan (Kube Vulnerability Scanner)
