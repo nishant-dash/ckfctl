@@ -4,6 +4,7 @@ from ckfctl.juju_helper import juju_export_bundle
 import typer
 from typing_extensions import Annotated
 from typing import List
+from rich import print as rprint
 
 cli = typer.Typer(
     name="ckfctl",
@@ -174,38 +175,6 @@ def check(
 @cli.command(
     epilog="Either attemp a local scan, provide an image or a file of image names"
 )
-# @typer.Option(
-#     "-i",
-#     "--image",
-#     help="name of a container image",
-#     metavar="<image_name>",
-# )
-# @typer.Option(
-#     "-f",
-#     "--file",
-#     help="file containing a list of container image names",
-#     metavar="<file>",
-# )
-# @typer.Option(
-#     "--format",
-#     "formatting",
-#     help="Output format, can be yaml, json or table",
-#     type=typer.Choice(["yaml", "json"]),
-# )
-# @typer.Option(
-#     "-o",
-#     "--output",
-#     help="File to store output",
-#     metavar="<output_file>",
-# )
-# @typer.Option(
-#     "-w",
-#     "--watch",
-#     help="Watch as scan results for each come in one by one",
-#     show_default=True,
-#     default=False,
-#     is_flag=True,
-# )
 def scan(image, file, formatting, output, watch):
     """
     :mag_right: Use Trivvy to [bold]scan[/bold] pod images against aquasec's CVE database
@@ -229,14 +198,55 @@ def upgrade():
 
 
 @cli.command()
-def init():
+def init(
+    mk8s: Annotated[
+        str,
+        typer.Option(
+            "-m",
+            "--mk8s",
+            help="Version of microk8s snap to use, ex: 1.27/stable",
+            rich_help_panel="Components",
+        ),
+    ] = None,
+    kf: Annotated[
+        str,
+        typer.Option(
+            "-k",
+            "--kf",
+            help="Version of kubeflow bundle to deploy, ex: 1.8/stable",
+            rich_help_panel="Components",
+        ),
+    ] = "1.8/stable",
+):
     """
     :rocket: [bold]Deploy[/bold] kubeflow using juju bootstrapped to microk8s
     """
-    pass
+    if mk8s:
+        rprint(f"Deploying microk8s {mk8s} with kubeflow {kf} with juju 3.1...")
+    else:
+        rprint(f"Using current kubectl context to deploy kubeflow {kf} with juju 3.1...")
 
 @cli.command()
-def plugins():
+def plugin(
+    enable: Annotated[
+        str,
+        typer.Option(
+            "-e",
+            "--enable",
+            help="Enable a supported plugin",
+            show_default=False,
+        ),
+    ] = None,
+    list: Annotated[
+        str,
+        typer.Option(
+            "-l",
+            "--list",
+            help="List current supported plugins",
+            show_default=False,
+        ),
+    ] = None,
+):
     """
     :hammer: [bold]Enable[/bold] plugins such as observability or mlflow
     """

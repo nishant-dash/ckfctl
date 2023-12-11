@@ -50,9 +50,17 @@ sudo snap connect ckfctl:juju-client-observe
 make build
 ```
 
+### Use the locally built snap
+```bash
+sudo snap install ckfctl.snap --dangerous
+# you will need to run the snap connect lines above ^ if this is the first time
+```
+
 ## Usage
 
 You can view all subcommands and flags with `-h` or `--help`.
+
+<br> ![screenshot](/png/screenshot-help.png)
 
 
 ### ckfctl check (Kube Upgrade and Bundle Info Viewer)
@@ -75,31 +83,4 @@ ckfctl check -f my-kf-bundle.yaml -f my-kf-bundle2.yaml
 
 # compare two local bundles and get a yaml/json output
 ckfctl check -f my-kf-bundle.yaml -f my-kf-bundle2.yaml --format yaml -o output.yaml
-```
-
-### ckfctl scan (Kube Vulnerability Scanner)
-
-```bash
-# scan a particular container image
-ckfctl scan -i <image_name>
-
-# scan a files of image names 
-ckfctl scan -f <file>
-
-# generate a yaml/json report
-ckfctl scan -f <file> --format json
-
-# watch output as it scans
-ckfctl scan -f <file> -w
-
-# Not Out yet
-# scan current local kubeflow installation that your juju controller has access to 
-# and your kubectl command line tool is configured with
-# this command is namespaced, with the default of kubeflow
-ckfctl scan
-
-# scan other namespace(s) or all namespaces (default is kubeflow)
-ckfctl scan -n monitoring -s
-ckfctl scan -n monitoring,custom,kubeflow -s
-ckfctl scan --all-namespaces
 ```

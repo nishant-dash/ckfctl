@@ -37,7 +37,7 @@ class kvs:
             try:
                 trivy_info = json.loads(output.stdout)
             except json.JSONDecodeError as error:
-                print(f"Trouble get json {error}, you probably hit your docker rate limit")
+                print(f"Trouble getting json {error}, you probably hit your docker rate limit")
 
             # structure output
             if trivy_info:
