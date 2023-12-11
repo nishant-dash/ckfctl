@@ -37,3 +37,58 @@ def juju_info(application: str=None, formatting: str="json"):
         print(error)
 
     return output_formatted
+
+
+def juju_ssh(
+    controller: str="microk8s-localhost",
+    model: str="kubeflow",
+    user: str="admin",
+    app: str=None,
+    command: str="hostname",
+    ):
+    cmd = [
+        JUJU,
+        "ssh",
+        "-m",
+        f"{controller_name}:{user}/{model_name}",
+        f"{app}/leader",
+        command
+    ]
+    output = sp.run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
+    return output.stdout
+
+
+def juju_deploy():
+    pass
+
+
+def juju_run():
+    controller: str="microk8s-localhost",
+    model: str="kubeflow",
+    user: str="admin",
+    app: str=None,
+    command: str="hostname",
+    ):
+    cmd = [
+        JUJU,
+        "exec",
+        "-m",
+        f"{controller_name}:{user}/{model_name}",
+        "-u"
+        f"{app}/leader",
+        command
+    ]
+    output = sp.run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
+    return output.stdout
+
+
+def juju_bootstrap():
+    pass
+
+
+def juju_add_model():
+    pass
+
+
+def juju_model_config():
+    pass

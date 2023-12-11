@@ -1,10 +1,21 @@
+# ckfctl.
 from ckfctl.kf_upgrade_planner import kup
 from ckfctl.kf_image_scanner import kvs
 from ckfctl.juju_helper import juju_export_bundle
+from ckfctl.env_getter import get_env_proxy_vars
+from ckfctl.prepare_node import prepare_node_script
+
+# cli
 import typer
+
+# typing utils
 from typing_extensions import Annotated
 from typing import List
-from rich import print as rprint
+
+# console and formatting
+from rich.console import Console
+from rich.syntax import Syntax
+
 
 cli = typer.Typer(
     name="ckfctl",
@@ -14,6 +25,8 @@ cli = typer.Typer(
     A collection of handy tools for operators of [bold]charmed[/bold] kubeflow environments
     """,
 )
+
+console = Console()
 
 epilog_check = '''
 To view your juju installation's bundle, run,\n
@@ -120,9 +133,9 @@ def check(
 
     if file:
         if len(file) == 2 and obj["target_version"]:
-            print("When checking for upgrade choose one of:")
-            print("- Two local bundles")
-            print("- One local One remote bundle")
+            console.print("When checking for upgrade choose one of:")
+            console.print("- Two local bundles")
+            console.print("- One local One remote bundle")
             raise typer.Exit(code=1)
 
         obj["file"] = file[0]
@@ -130,7 +143,7 @@ def check(
             obj["target_version"] = -1
             obj["second_file"] = file[1]
         elif len(file) > 2:
-            print("Too many files!")
+            console.print("Too many files!")
             raise typer.Exit(code=1)
 
 
@@ -153,7 +166,7 @@ def check(
 
     if kupObj.target_version == "self":
         kupObj.target_version = local_version
-        print(f"Inferring input bundle's version for target version as: {kupObj.target_version}")
+        console.print(f"Inferring input bundle's version for target version as: {kupObj.target_version}")
 
     if kupObj.target_version == -1:
         # get second local bundle file
@@ -198,7 +211,7 @@ def upgrade():
 
 
 @cli.command()
-def init(
+def deploy(
     mk8s: Annotated[
         str,
         typer.Option(
@@ -207,7 +220,7 @@ def init(
             help="Version of microk8s snap to use, ex: 1.27/stable",
             rich_help_panel="Components",
         ),
-    ] = None,
+    ] = "1.26/stable",
     kf: Annotated[
         str,
         typer.Option(
@@ -217,14 +230,23 @@ def init(
             rich_help_panel="Components",
         ),
     ] = "1.8/stable",
+    skip_mk8s: Annotated[
+        bool,
+        typer.Option(
+            "-s",
+            "--skip-mk8s",
+            help="Skip microk8s setup to make use of existing mk8s",
+            rich_help_panel="Components",
+        ),
+    ] = False,
 ):
     """
     :rocket: [bold]Deploy[/bold] kubeflow using juju bootstrapped to microk8s
     """
     if mk8s:
-        rprint(f"Deploying microk8s {mk8s} with kubeflow {kf} with juju 3.1...")
+        console.print(f"Deploying microk8s {mk8s} with kubeflow {kf} with juju 3.1...")
     else:
-        rprint(f"Using current kubectl context to deploy kubeflow {kf} with juju 3.1...")
+        console.print(f"Using current kubectl context to deploy kubeflow {kf} with juju 3.1...")
 
 @cli.command()
 def plugin(
@@ -251,6 +273,22 @@ def plugin(
     :hammer: [bold]Enable[/bold] plugins such as observability or mlflow
     """
     pass
+
+
+@cli.command()
+def init():
+    """
+    :page_facing_up: Output a bash script to [bold]Prepare[/bold] your current node for ckf installation
+    """
+    console.print(Syntax(prepare_node_script(), "bash"), soft_wrap=True)
+
+
+@cli.command(name="show-env-proxies")
+def show_env_proxies():
+    """
+    :warning: Output a bash script to [bold]Prepare[/bold] your current node for ckf installation
+    """
+    console.print(get_env_proxy_vars())
 
 def entrypoint() -> None:
     cli()

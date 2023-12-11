@@ -22,6 +22,7 @@ apps:
       - home
       - dot-local-share-juju
       - juju-bin
+      - dot-kube
     environment:
       PATH: $PATH:$SNAP/juju/bin
 
@@ -64,3 +65,7 @@ plugs:
     interface: content
     content: juju
     target: $SNAP/juju
+  dot-kube:
+    interface: personal-files
+    write:
+      - $HOME/.kube
