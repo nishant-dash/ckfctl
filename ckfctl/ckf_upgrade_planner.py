@@ -1,7 +1,7 @@
-'''
+"""
 Tool to parse current deployment bundle, extrapolate possible kubeflow version and 
 print rudimentary upgrade info
-'''
+"""
 
 import yaml
 import json
@@ -16,7 +16,7 @@ from rich.table import Table
 from rich.progress import track
 from rich import box
 
-# misc
+# misc.
 from os.path import isfile, exists
 from ckfctl.juju_helper import juju_export_bundle
 
@@ -33,6 +33,7 @@ ARG_TYPES = {
     "dst": ["local", "self", "file", "channel"],
 }
 
+
 class CharmedKubeflowUpgradePlanner:
     def __init__(self, **kwargs):
         self.kf_source = "https://github.com/canonical/bundle-kubeflow"
@@ -42,9 +43,8 @@ class CharmedKubeflowUpgradePlanner:
         self.juju = "juju"
         self.output_formats = ["yaml", "json", "table"]
         self.source_version = None
-        for k,v in kwargs.items():
+        for k, v in kwargs.items():
             setattr(self, k, v)
-
 
     def _print(self, output, columns=None) -> None:
         """
@@ -65,17 +65,16 @@ class CharmedKubeflowUpgradePlanner:
                 console.print(output)
         else:
             # check validity of file
-            if '/' in self.output_file:
-                path = self.output_file.split('/')
+            if "/" in self.output_file:
+                path = self.output_file.split("/")
                 path = "/".join(path[:-1])
                 if not exists(self.output_file):
                     console.print(f"Invalid path {path}")
                     return None
-            with open(self.output_file, 'w') as f:
+            with open(self.output_file, "w") as f:
                 f.write(output)
 
-
-    def color_me(self, string: str, color: str="green") -> str:
+    def color_me(self, string: str, color: str = "green") -> str:
         """
         Embed rich coloring scheme into strings
 
@@ -83,9 +82,8 @@ class CharmedKubeflowUpgradePlanner:
         - color embedded string
         """
         if not self.output_file:
-            return f"[{color}]{string}[/{color}]" 
+            return f"[{color}]{string}[/{color}]"
         return string
-
 
     def pprint(self, d, upgrades=False) -> None:
         """
@@ -102,9 +100,11 @@ class CharmedKubeflowUpgradePlanner:
             temp = []
             if upgrades:
                 fields = ["Charm", "Src Channel", "S", "Dst Channel", "Src Rev", "S", "Dst Rev"]
-                for k,v in d.items():
+                for k, v in d.items():
                     if v["channel_upgrade"] == "->":
-                        temp.append([self.color_me(k)] + [self.color_me(str(v2)) for v2 in v.values()])
+                        temp.append(
+                            [self.color_me(k)] + [self.color_me(str(v2)) for v2 in v.values()]
+                        )
                     elif v["revision_upgrade"] == "->":
                         temp.append([self.color_me(k)])
                         for k2, v2 in v.items():
@@ -116,14 +116,13 @@ class CharmedKubeflowUpgradePlanner:
                         temp.append([k] + [str(v2) for v2 in v.values()])
             else:
                 fields = ["Charm", "Channel", "Revision"]
-                for k,v in d.items():
+                for k, v in d.items():
                     temp2 = [k]
                     for k2, v2 in v.items():
                         if k2 != "charm_name":
                             temp2.extend([str(v2)])
                     temp.append(temp2)
             self._print(temp, columns=fields)
-
 
     def transform(self, bundle, get_revision=False) -> {}:
         """
@@ -148,20 +147,21 @@ class CharmedKubeflowUpgradePlanner:
                     charm_version_dict[charm] = {"channel": info["channel"], "revision": rev}
         else:
             for charm, info in bundle["applications"].items():
-                charm_version_dict[charm] = {"channel": info["channel"], "charm_name": info["charm"]}
+                charm_version_dict[charm] = {
+                    "channel": info["channel"],
+                    "charm_name": info["charm"],
+                }
             self.get_revision_numbers(charm_version_dict)
 
-        return charm_version_dict , charm_version_dict[self.anchor_app]["channel"]
+        return charm_version_dict, charm_version_dict[self.anchor_app]["channel"]
 
-
-    def compare_channels(a :str, b :str) -> None:
+    def compare_channels(a: str, b: str) -> None:
         """
-        @TODO Create a channel object, with functions 
+        @TODO Create a channel object, with functions
         - to help identify a string as a channel
         - to compare two channels
         """
         pass
-
 
     def check_downgrade(self, source, target) -> bool:
         """
@@ -192,7 +192,6 @@ class CharmedKubeflowUpgradePlanner:
             return True
         return False
 
-
     def upgrade_flagger(self, source, target) -> None:
         """
         @TODO An unsightly function in despearate need of simplification and elegance
@@ -215,16 +214,20 @@ class CharmedKubeflowUpgradePlanner:
 
         for charm, view in final_view.items():
             final_dict[charm] = {
-                "src_channel": None, "channel_upgrade" : "=","dst_channel": None,
-                "src_revision": None, "revision_upgrade" : "=", "dst_revision": None,
+                "src_channel": None,
+                "channel_upgrade": "=",
+                "dst_channel": None,
+                "src_revision": None,
+                "revision_upgrade": "=",
+                "dst_revision": None,
             }
-            if view["src"]: 
+            if view["src"]:
                 final_dict[charm]["src_channel"] = view["src"]["channel"]
                 final_dict[charm]["src_revision"] = int(view["src"]["revision"])
-            if view["dst"]: 
+            if view["dst"]:
                 final_dict[charm]["dst_channel"] = view["dst"]["channel"]
                 final_dict[charm]["dst_revision"] = int(view["dst"]["revision"])
-            
+
             if final_dict[charm]["src_channel"] and final_dict[charm]["dst_channel"]:
                 if final_dict[charm]["dst_channel"] != final_dict[charm]["src_channel"]:
                     final_dict[charm]["channel_upgrade"] = "->"
@@ -246,21 +249,24 @@ class CharmedKubeflowUpgradePlanner:
             if app not in target:
                 apps_to_remove.append(app)
         if len(apps_to_remove) > 0:
-            console.print(f"{len(apps_to_remove)} charms not found in target bundle: {apps_to_remove}")
+            console.print(
+                f"{len(apps_to_remove)} charms not found in target bundle: {apps_to_remove}"
+            )
 
         self.check_downgrade(source, target)
-        console.print(f"Also check upgrade docs at {self.upgrade_docs} for any relevant steps and caveats!")
-
+        console.print(
+            f"Also check upgrade docs at {self.upgrade_docs} for any relevant steps and caveats!"
+        )
 
     def get_revision_numbers(self, bundle) -> {}:
         """
         Query charmhub using the juju client to get revision numbers for charms
 
         Returns:
-        - A transformed version of the input bundle, 
+        - A transformed version of the input bundle,
         but with revision number info embeded into the dictionary as well
         """
-        # Currently, the charmed kf bundle in the git repo does not include 
+        # Currently, the charmed kf bundle in the git repo does not include
         # information about revision numbers, only channels.
         console.print("Getting revision numbers from charmhub via local juju client...")
         # for each charm, check with juju info to see what revision you get
@@ -275,15 +281,14 @@ class CharmedKubeflowUpgradePlanner:
             except json.JSONDecodeError as error:
                 console.print(error)
             channels = juju_info["channels"]
-            cur_channel = info["channel"].split('/')[0]
-            cur_track = info["channel"].split('/')[1]
+            cur_channel = info["channel"].split("/")[0]
+            cur_track = info["channel"].split("/")[1]
             if cur_channel not in channels:
                 bundle[charm]["revision"] = "Error"
-            else:    
+            else:
                 bundle[charm]["revision"] = channels[cur_channel][cur_track][0]["revision"]
 
-
-    def download_bundle(self, channel_string :str = None) -> {}:
+    def download_bundle(self, channel_string: str = None) -> {}:
         """
         Given a channel, download the bundle yaml from Charmed Kubeflow's github
         and return the yaml as a dictionary
@@ -301,7 +306,7 @@ class CharmedKubeflowUpgradePlanner:
         else:
             url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/kubeflow/bundle.yaml"
         response = requests.get(url)
-        console.print (f"Downloading kf {channel_string} bundle...")
+        console.print(f"Downloading kf {channel_string} bundle...")
         if response.status_code != HTTP_OK:
             response.raise_for_status()
             console.print_exception(f"Target bundle for Kubeflow {channel_string} not found!")
@@ -312,7 +317,6 @@ class CharmedKubeflowUpgradePlanner:
                 console.print(error)
 
         return target_bundle
-
 
     def load_bundle(self, bundle_file) -> {}:
         """
@@ -328,7 +332,6 @@ class CharmedKubeflowUpgradePlanner:
             except yaml.YAMLError as error:
                 console.print(error)
         return bundle
-
 
     def is_floating_numeric(self, string: str) -> bool:
         """
@@ -352,9 +355,9 @@ class CharmedKubeflowUpgradePlanner:
         Returns:
         - True/False
         """
-        if '/' in string:
-            channel = string.split('/')[0]
-            track = string.split('/')[1]
+        if "/" in string:
+            channel = string.split("/")[0]
+            track = string.split("/")[1]
             if track in TRACKS:
                 if channel == "latest" or self.is_floating_numeric(channel):
                     return True
@@ -391,7 +394,7 @@ class CharmedKubeflowUpgradePlanner:
         """
         data = {}
         version = None
-        bundle = None        
+        bundle = None
         match arg_type:
             case "local":
                 bundle = juju_export_bundle()
@@ -428,7 +431,7 @@ class CharmedKubeflowUpgradePlanner:
         if self.dst:
             dst_type = self.infer_type(self.dst, mode="dst")
             dst_data, _ = self.get_data(self.dst, dst_type)
-        
+
         if src_data:
             if dst_data:
                 self.upgrade_flagger(source=src_data, target=dst_data)
