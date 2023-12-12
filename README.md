@@ -66,20 +66,24 @@ You can view all subcommands and flags with `-h` or `--help`.
 
 ```bash
 # run against local environment, this will run juju commands
-ckfctl check -l
+ckfctl check -s local
 
 # view a local bundle
-ckfctl check -f my-kf-bundle.yaml
+ckfctl check -s my-kf-bundle.yaml
 
 # view a remote bundle
-ckfctl check -t 1.7/stable
+ckfctl check -s 1.8/stable
 
 # compare a local and remote bundle
-ckfctl check -f my-kf-bundle.yaml -t 1.7/stable
+ckfctl check -s my-kf-bundle.yaml -d 1.7/stable
 
-# compare two local bundles
-ckfctl check -f my-kf-bundle.yaml -f my-kf-bundle2.yaml
+# compare local environment to a remote channel
+ckfctl check -s local -d 1.8/edge
 
-# compare two local bundles and get a yaml/json output
-ckfctl check -f my-kf-bundle.yaml -f my-kf-bundle2.yaml --format yaml -o output.yaml
+# compare local environment to its own latest version
+ckfctl check -s local -d self
 ```
+
+## Version Info/Dependencies
+
+- juju 3 client

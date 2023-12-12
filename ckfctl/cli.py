@@ -1,7 +1,7 @@
 # ckfctl.
-from ckf_upgrade_planner import CharmedKubeflowUpgradePlanner
-from env_getter import get_env_proxy_vars
-from prepare_node import prepare_node_script
+from ckfctl.ckf_upgrade_planner import CharmedKubeflowUpgradePlanner
+from ckfctl.env_getter import get_env_proxy_vars
+from ckfctl.prepare_node import prepare_node_script
 
 # cli
 import typer

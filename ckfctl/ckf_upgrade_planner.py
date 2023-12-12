@@ -18,7 +18,7 @@ from rich import box
 
 # misc
 from os.path import isfile, exists
-from juju_helper import juju_export_bundle
+from ckfctl.juju_helper import juju_export_bundle
 
 # global declarations
 console = Console()
