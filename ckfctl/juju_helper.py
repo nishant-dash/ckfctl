@@ -50,11 +50,11 @@ def juju_ssh(
         JUJU,
         "ssh",
         "-m",
-        f"{controller_name}:{user}/{model_name}",
+        f"{controller}:{user}/{model}",
         f"{app}/leader",
         command
     ]
-    output = sp.run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
+    output = run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
     return output.stdout
 
 
@@ -62,7 +62,7 @@ def juju_deploy():
     pass
 
 
-def juju_run():
+def juju_run(
     controller: str="microk8s-localhost",
     model: str="kubeflow",
     user: str="admin",
@@ -73,12 +73,12 @@ def juju_run():
         JUJU,
         "exec",
         "-m",
-        f"{controller_name}:{user}/{model_name}",
+        f"{controller}:{user}/{model}",
         "-u"
         f"{app}/leader",
         command
     ]
-    output = sp.run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
+    output = run(cmd, stdout=PIPE, stderr=DEVNULL, text=True)
     return output.stdout
 
 
