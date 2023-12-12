@@ -1,9 +1,7 @@
 # ckfctl.
-from ckfctl.kf_upgrade_planner import kup
-from ckfctl.kf_image_scanner import kvs
-from ckfctl.juju_helper import juju_export_bundle
-from ckfctl.env_getter import get_env_proxy_vars
-from ckfctl.prepare_node import prepare_node_script
+from ckf_upgrade_planner import CharmedKubeflowUpgradePlanner
+from env_getter import get_env_proxy_vars
+from prepare_node import prepare_node_script
 
 # cli
 import typer
@@ -30,50 +28,24 @@ console = Console()
 
 epilog_check = '''
 To view your juju installation's bundle, run,\n
-$ ckfctl check -l\n
+$ ckfctl check -s local\n
 To view a local bundle file, run\n
-$ ckfctl check -f filename\n
-You can extract a bundle from juju as well, with\n
-$ juju export-bundle -o filename\n
+$ ckfctl check -s filename.yaml\n
+You can use an extracted bundle from juju as well, with\n
+$ juju export-bundle -o filename.yaml\n
 \n
-To view a bundle from the kubeflow git repo, run with only the "-t" flag\n
-and then a channel after it. eg: ckfctl check -t 1.7/stable\n
+To view a bundle from the kubeflow git repo, just specify the channel \n
+$ ckfctl check -s 1.7/stable\n
 \n
-When more than one(maximum of 2) are provided, an automatic check\n
-for upgrade is run.\n
-$ ckfctl check -l -t 1.8/stable\n
-$ ckfctl check -f localbundle.yaml -t 1.7/edge
+Use the source and destination flags to compare 2 bundles for upgrades.\n
+$ ckfctl check -s local -d 1.8/stable\n
+$ ckfctl check -s localbundle.yaml -d 1.7/edge\n
+$ ckfctl check -s local -d self\n
+$ ckfctl check -s 1.7/edge -d latest/stable\n
+$ ckfctl check -s 1.8/stable -d localbundle.yaml
 '''
 @cli.command(epilog=epilog_check)
 def check(
-    local: Annotated[
-        bool,
-        typer.Option(
-            "-l",
-            "--local",
-            help="Check juju installation for Kubeflow",
-        ),
-    ] = False,
-    file: Annotated[
-        List[str],
-        typer.Option(
-            "-f",
-            "--file",
-            help='''
-                Input juju kubeflow bundle yaml, can specify 2 local files\n
-                using this same flag, treating first file as src for diff
-            ''',
-            show_default=False,
-        ),
-    ] = None,
-    target: Annotated[
-        str,
-        typer.Option(
-            "-t",
-            "--target",
-            help="Target version of kubeflow bundle, ex: 1.8/stable, 1.7/beta or self",
-        ),
-    ] = None,
     src: Annotated[
         str,
         typer.Option(
@@ -103,6 +75,7 @@ def check(
     formatting: Annotated[
         str,
         typer.Option(
+            "-f",
             "--format",
             help="Output format, can be [bold]yaml[/bold], [bold]json[/bold] or table",
             rich_help_panel="Other Options",
@@ -123,67 +96,15 @@ def check(
     :sparkles: [bold]View[/bold] kubeflow bundles or compare 2 bundles for possible upgrades
     """
     obj = {
-        "local": local,
-        "target_version": target,
-        "file": None,
-        "second_file": None,
+        "src": src,
+        "dst": dst,
         "format": formatting,
         "output_file": output,
     }
 
-    if file:
-        if len(file) == 2 and obj["target_version"]:
-            console.print("When checking for upgrade choose one of:")
-            console.print("- Two local bundles")
-            console.print("- One local One remote bundle")
-            raise typer.Exit(code=1)
+    ckupObj = CharmedKubeflowUpgradePlanner(**obj)
+    ckupObj.main()
 
-        obj["file"] = file[0]
-        if len(file) == 2:
-            obj["target_version"] = -1
-            obj["second_file"] = file[1]
-        elif len(file) > 2:
-            console.print("Too many files!")
-            raise typer.Exit(code=1)
-
-
-    kupObj = kup(**obj)
-
-    if kupObj.local:
-        local_bundle = juju_export_bundle()
-        charm_version_dict, local_version = kupObj.transform(local_bundle)
-        kupObj.pprint(charm_version_dict)
-        raise typer.Exit(code=0)
-
-    local_version = None
-    if kupObj.file:
-        # get local bundle
-        local_bundle = kupObj.load_bundle(kupObj.file)
-        charm_version_dict, local_version = kupObj.transform(local_bundle)
-        if not kupObj.target_version:
-            kupObj.pprint(charm_version_dict)
-            raise typer.Exit(code=0)
-
-    if kupObj.target_version == "self":
-        kupObj.target_version = local_version
-        console.print(f"Inferring input bundle's version for target version as: {kupObj.target_version}")
-
-    if kupObj.target_version == -1:
-        # get second local bundle file
-        target_bundle = kupObj.load_bundle(kupObj.second_file)
-        charm_version_dict_target, kupObj.target_version = kupObj.transform(target_bundle)
-    else:
-        # get target bundle
-        target_bundle = kupObj.download_bundle()
-        if not target_bundle:
-            raise typer.Exit(code=1)
-        charm_version_dict_target, kupObj.target_version = kupObj.transform(target_bundle, get_revision=True)
-    if not kupObj.file:
-        kupObj.pprint(charm_version_dict_target)
-        raise typer.Exit(code=0)
-
-    # print upgrade opportunities
-    kupObj.upgrade_flagger(source=charm_version_dict, target=charm_version_dict_target)
 
 @cli.command(
     epilog="Either attemp a local scan, provide an image or a file of image names"
@@ -192,14 +113,7 @@ def scan(image, file, formatting, output, watch):
     """
     :mag_right: Use Trivvy to [bold]scan[/bold] pod images against aquasec's CVE database
     """
-    kvs_obj = kvs(formatting, output, watch)
-    if image:
-        kvs_obj.scan([image])
-    if file:
-        images_list = kvs_obj.load_file(file)
-        if images_list:
-            kvs_obj.scan(images_list)
-    kvs_obj.print_report()
+    pass
 
 
 @cli.command()

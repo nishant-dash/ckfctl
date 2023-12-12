@@ -9,7 +9,6 @@ import json
 # procs
 import requests
 import subprocess as sp
-import os
 
 # formatting stuff
 from rich.console import Console
@@ -17,20 +16,43 @@ from rich.table import Table
 from rich.progress import track
 from rich import box
 
+# misc
+from os.path import isfile, exists
+from juju_helper import juju_export_bundle
 
-class kup:
+# global declarations
+console = Console()
+HTTP_OK = 200
+TRACKS = ["stable", "edge", "beta"]
+ARG_SPECIAL_TYPES = {
+    "src": ["local"],
+    "dst": ["local", "self"],
+}
+ARG_TYPES = {
+    "src": ["local", "file", "channel"],
+    "dst": ["local", "self", "file", "channel"],
+}
+
+class CharmedKubeflowUpgradePlanner:
     def __init__(self, **kwargs):
         self.kf_source = "https://github.com/canonical/bundle-kubeflow"
-        self.upgrade_docs = f"{self.kf_source}/tree/main/docs"
+        self.upgrade_docs = "https://charmed-kubeflow.io/docs/upgrade"
         self.anchor_app = "kubeflow-dashboard"
         self.index = {"beta": 0, "stable": 1, "edge": 2}
         self.juju = "juju"
         self.output_formats = ["yaml", "json", "table"]
+        self.source_version = None
         for k,v in kwargs.items():
             setattr(self, k, v)
 
 
-    def _print(self, output, columns=None):
+    def _print(self, output, columns=None) -> None:
+        """
+        Helper to either print to terminal or write to a file
+
+        Returns:
+        - None
+        """
         if not self.output_file:
             if self.format == "table":
                 table = Table(box=box.ROUNDED)
@@ -38,30 +60,40 @@ class kup:
                     table.add_column(c)
                 for r in output:
                     table.add_row(*r)
-                console = Console()
                 console.print(table)
             else:
-                print(output)
+                console.print(output)
         else:
             # check validity of file
             if '/' in self.output_file:
                 path = self.output_file.split('/')
                 path = "/".join(path[:-1])
-                if not os.path.exists(self.output_file):
-                    print(f"Invalid path {path}")
-                    return
+                if not exists(self.output_file):
+                    console.print(f"Invalid path {path}")
+                    return None
             with open(self.output_file, 'w') as f:
                 f.write(output)
 
 
     def color_me(self, string: str, color: str="green") -> str:
+        """
+        Embed rich coloring scheme into strings
+
+        Returns:
+        - color embedded string
+        """
         if not self.output_file:
             return f"[{color}]{string}[/{color}]" 
         return string
 
-    # Styled print with optional upgrade markers
-    # Supports yaml, json and table 
-    def pprint(self, d, upgrades=False):
+
+    def pprint(self, d, upgrades=False) -> None:
+        """
+        Pretty print a bundle either in tby itself or in the context of upgrades
+
+        Returns:
+        - None
+        """
         if self.format == "yaml":
             self._print(yaml.dump(d))
         elif self.format == "json":
@@ -93,9 +125,17 @@ class kup:
             self._print(temp, columns=fields)
 
 
-    # Transform the juju bundle yaml to a dict that maps
-    # charm name -> {channel, revision}
-    def transform(self, bundle, get_revision=False):
+    def transform(self, bundle, get_revision=False) -> {}:
+        """
+        Transform the juju bundle yaml to a dict that maps
+        charm name -> {channel, revision}
+
+        Returns:
+        - Dictionary of charm name -> {channel, revision}
+        """
+        if not bundle:
+            return None, None
+
         charm_version_dict = {}
         if not get_revision:
             for charm, info in bundle["applications"].items():
@@ -114,8 +154,22 @@ class kup:
         return charm_version_dict , charm_version_dict[self.anchor_app]["channel"]
 
 
-    # hacky function to check downgrade
-    def check_downgrade(self, source, target):
+    def compare_channels(a :str, b :str) -> None:
+        """
+        @TODO Create a channel object, with functions 
+        - to help identify a string as a channel
+        - to compare two channels
+        """
+        pass
+
+
+    def check_downgrade(self, source, target) -> bool:
+        """
+        @TODO Hacky function to check downgrade
+
+        Returns:
+        - None
+        """
         src = source[self.anchor_app]
         dst = target[self.anchor_app]
         src_channel, src_mode = src["channel"].split("/")
@@ -127,21 +181,26 @@ class kup:
         #             print("Downgrade detected!")
         #             return True
         if float(dst_channel) < float(src_channel):
-            print("Downgrade detected!")
+            console.print("Downgrade detected!")
             return True
         elif dst_channel == src_channel:
             if self.index[dst_mode] < self.index[src_mode]:
-                print("Downgrade detected!")
+                console.print("Downgrade detected!")
                 return True
         elif int(dst["revision"]) < int(src["revision"]):
-            print("Downgrade detected!")
+            console.print("Downgrade detected!")
             return True
         return False
 
 
+    def upgrade_flagger(self, source, target) -> None:
+        """
+        @TODO An unsightly function in despearate need of simplification and elegance
+        Print a bespoke diff of the bundles (dicts) in a manner that flags charms for upgrades
 
-    # print a diff of the bundle in a manner that flags apps for upgrades
-    def upgrade_flagger(self, source, target):
+        Returns:
+        - None
+        """
         final_dict = {}
         num_changes = 0
 
@@ -180,25 +239,30 @@ class kup:
                 final_dict[charm]["revision_upgrade"] = "+"
 
         self.pprint(final_dict, upgrades=True)
-        print(f"\n{num_changes} charms need upgrades!")
+        console.print(f"\n{num_changes} charms need upgrades!")
 
         apps_to_remove = []
         for app in source.keys():
             if app not in target:
                 apps_to_remove.append(app)
         if len(apps_to_remove) > 0:
-            print(f"{len(apps_to_remove)} charms not found in target bundle: {apps_to_remove}")
+            console.print(f"{len(apps_to_remove)} charms not found in target bundle: {apps_to_remove}")
 
         self.check_downgrade(source, target)
-        print(f"Also check upgrade docs at {self.upgrade_docs} for any relevant steps and caveats!")
+        console.print(f"Also check upgrade docs at {self.upgrade_docs} for any relevant steps and caveats!")
 
 
-    # function to query charmhub with juju to get version numbers for apps
-    def get_revision_numbers(self, bundle):
-        # before we can return target bundle, we need to get revision numbers from
-        # charmhub. Currently, the kf bundle in the git repo does not include such
-        # information.
-        print("Getting revision numbers from charmhub via local juju client...")
+    def get_revision_numbers(self, bundle) -> {}:
+        """
+        Query charmhub using the juju client to get revision numbers for charms
+
+        Returns:
+        - A transformed version of the input bundle, 
+        but with revision number info embeded into the dictionary as well
+        """
+        # Currently, the charmed kf bundle in the git repo does not include 
+        # information about revision numbers, only channels.
+        console.print("Getting revision numbers from charmhub via local juju client...")
         # for each charm, check with juju info to see what revision you get
         for charm, info in track(bundle.items(), description="Processing..."):
             # get the juju info as json
@@ -209,7 +273,7 @@ class kup:
             try:
                 juju_info = json.loads(output.stdout)
             except json.JSONDecodeError as error:
-                print(error)
+                console.print(error)
             channels = juju_info["channels"]
             cur_channel = info["channel"].split('/')[0]
             cur_track = info["channel"].split('/')[1]
@@ -218,37 +282,158 @@ class kup:
             else:    
                 bundle[charm]["revision"] = channels[cur_channel][cur_track][0]["revision"]
 
-    # load target kubeflow bundle from github for comparison
-    def download_bundle(self):
-        if not self.target_version:
-            print("Unable to get target version")
-            return
+
+    def download_bundle(self, channel_string :str = None) -> {}:
+        """
+        Given a channel, download the bundle yaml from Charmed Kubeflow's github
+        and return the yaml as a dictionary
+
+        Returns:
+        - Dictionary format of the remote yaml file
+        """
+        if not channel_string:
+            # console.print("Unable to get version")
+            return None
         target_bundle = None
-        version, channel = self.target_version.split("/")
+        version, channel = channel_string.split("/")
         if version == "latest":
             url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/bundle.yaml"
         else:
             url = f"{self.kf_source}/raw/main/releases/{version}/{channel}/kubeflow/bundle.yaml"
         response = requests.get(url)
-        print (f"Downloading kf {self.target_version} bundle...")
-        if response.status_code != 200:
+        console.print (f"Downloading kf {channel_string} bundle...")
+        if response.status_code != HTTP_OK:
             response.raise_for_status()
-            print(f"Target bundle for Kubeflow {self.target_version} not found!")
+            console.print_exception(f"Target bundle for Kubeflow {channel_string} not found!")
         else:
             try:
                 target_bundle = yaml.safe_load(response.content)
             except yaml.YAMLError as error:
-                print(error)
+                console.print(error)
 
         return target_bundle
 
 
-    # Yaml safe load juju bundle
-    def load_bundle(self, bundle_file):
+    def load_bundle(self, bundle_file) -> {}:
+        """
+        Given a filesystem filename, yaml load it
+
+        Returns:
+        - Dictionary format of the yaml file
+        """
         bundle = None
         with open(bundle_file, "r") as f:
             try:
                 bundle = yaml.safe_load(f)
             except yaml.YAMLError as error:
-                print(error)
+                console.print(error)
         return bundle
+
+
+    def is_floating_numeric(self, string: str) -> bool:
+        """
+        Given a string check if its in the form of a float number
+
+        Returns:
+        - True/False
+        """
+        try:
+            float(string)
+            return True
+        except ValueError as error:
+            console.print_exception(error)
+            return False
+
+    def is_channel_format(self, string: str) -> bool:
+        """
+        Given a string check if its in the form of a channel string
+        For ex: 1.8/stable, 1.45/beta, 3.1/edge
+
+        Returns:
+        - True/False
+        """
+        if '/' in string:
+            channel = string.split('/')[0]
+            track = string.split('/')[1]
+            if track in TRACKS:
+                if channel == "latest" or self.is_floating_numeric(channel):
+                    return True
+        return False
+
+    def infer_type(self, arg, mode) -> str:
+        """
+        Given a argument such as filename, special keyword or channel like 1.8/stable
+        infer its type as such
+
+        Returns:
+        - A string that denotes the type of argument such as file, channel(ex: 1.8/stable)
+        or some special keywords
+        """
+        inferred_type = None
+        if arg in ARG_SPECIAL_TYPES[mode]:
+            inferred_type = arg
+        elif isfile(arg):
+            inferred_type = "file"
+        elif self.is_channel_format(arg):
+            inferred_type = "channel"
+
+        # console.print(f"Inferred type of {arg} is {inferred_type}")
+        return inferred_type
+
+    def get_data(self, arg, arg_type) -> ({}, str):
+        """
+        Given a argument such as filename, special keyword or channel like 1.8/stable
+        Use the argument and its type to call the appropriate function
+
+        Returns:
+        - A dictionary map charm names to a dictionary of charm channel and revisions
+        - The version of the bundle w.r.t kubeflow
+        """
+        data = {}
+        version = None
+        bundle = None        
+        match arg_type:
+            case "local":
+                bundle = juju_export_bundle()
+            case "self":
+                console.print(f"Detected version of source bundle as {self.source_version}")
+                bundle = self.download_bundle(self.source_version)
+            case "file":
+                bundle = self.load_bundle(arg)
+            case "channel":
+                bundle = self.download_bundle(arg)
+            case _:
+                console.print(f"Unknow type {arg_type}!")
+                bundle = None
+
+        if arg_type in ["channel", "self"]:
+            data, version = self.transform(bundle, get_revision=True)
+        else:
+            data, version = self.transform(bundle)
+
+        return data, version
+
+    def main(self):
+        """
+        Main logic of the upgrade flagger
+        """
+        src_type = None
+        src_data = None
+        if self.src:
+            src_type = self.infer_type(self.src, mode="src")
+            src_data, self.source_version = self.get_data(self.src, src_type)
+
+        dst_type = None
+        dst_data = None
+        if self.dst:
+            dst_type = self.infer_type(self.dst, mode="dst")
+            dst_data, _ = self.get_data(self.dst, dst_type)
+        
+        if src_data:
+            if dst_data:
+                self.upgrade_flagger(source=src_data, target=dst_data)
+            else:
+                self.pprint(src_data)
+        else:
+            if dst_data:
+                self.pprint(dst_data)
