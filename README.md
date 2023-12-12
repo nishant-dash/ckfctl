@@ -59,7 +59,7 @@ sudo snap install ckfctl.snap --dangerous
 
 You can view all subcommands and flags with `-h` or `--help`.
 
-<br> ![screenshot](/png/screenshot-help.png)
+<br> ![screenshot](/png/ckfctl_screenshot.png)
 
 
 ### ckfctl check (Kube Upgrade and Bundle Info Viewer)
